@@ -2,6 +2,7 @@ import express, { Request, Response  } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import { registerRouter } from "./routes/registerRouter.mjs";
 
 dotenv.config();
 
@@ -13,6 +14,9 @@ const port = process.env.PORT || 3001;
 const dbUrl = process.env.URL;
 
 if (!dbUrl) throw Error("no db URL");
+
+app.use("/register", registerRouter);
+app.use("/login", loginRouter);
 
 app.get("/ping", (req, res) => {
   res.status(200).json({ status: "api is working" });
