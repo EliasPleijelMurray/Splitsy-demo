@@ -1,3 +1,7 @@
 export const Header = () => {
-    return<></>
+    return<>
+    <div className="Logo">
+        <img src="../public/Logga.svg" alt="" />
+    </div>
+    </>
 }
