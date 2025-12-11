@@ -54,4 +54,32 @@ export const authService = {
     const result = await response.json();
     return result.user;
   },
+
+  async logout(): Promise<void> {
+    const response = await fetch(`${API_URL}/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Logout failed");
+    }
+  },
+
+  async getCurrentUser(): Promise<User | null> {
+    try {
+      const response = await fetch(`${API_URL}/me`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      return response.json();
+    } catch (error) {
+      return null;
+    }
+  },
 };
