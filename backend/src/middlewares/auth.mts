@@ -4,43 +4,31 @@ import { UserDto } from "../models/userDto.mjs";
 import User from "../models/userSchema.mjs";
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
-  // loginCookie innehåller krypterad användarinformation
+
   const loginCookie = req.cookies["login"];
 
-  // om cookien in finns
   if (!loginCookie) {
-    // Skicka tillbaka Unauthorized
-    res.status(401).end();
-  } else {
-    try {
-      // Om cookien finns, verifiera och avkoda den
-      const jwtSecret = process.env.JWT_SECRET;
-      if (!jwtSecret) throw new Error("JWT_SECRET not configured");
+    return res.status(401).json({ message: "No authentication token" });
+  }
+
+  try {
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) throw new Error("JWT_SECRET not configured");
+    
+    const result = jwt.verify(loginCookie, jwtSecret);
+    const theUser: UserDto = result as UserDto;
+    
+    const userFromDb = await User.findOne({ email: theUser.email });
+
+    if (userFromDb) {
+      // Optionally attach user to request for use in routes
+      // (req as any).user = theUser;
       
-      // result = { name: "....", email: "...."}
-      const result = jwt.verify(loginCookie, jwtSecret);
-
-      // Om result inte finns
-      if (!result) {
-        // Skicka tillbaka Unauthorized
-        res.status(401).end();
-      } else {
-        // Om result finns, hitta användaren i databasen
-        const theUser: UserDto = result as UserDto;
-        const userFromDb = await User.findOne({ email: theUser.email });
-
-        // Om användaren finns
-        if (userFromDb) {
-          // Gå till nästa middleware
-          next();
-        } else {
-          // Annars skicka tillbaka Forbidden
-          res.status(403).send("Faking a user are we???");
-        }
-      }
-    } catch (error) {
-      // JWT verification failed (invalid signature, expired, etc.)
-      res.status(401).json({ message: "Invalid or expired token" });
+      next();
+    } else {
+      return res.status(403).json({ message: "User not found in database" });
     }
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid or expired token" });
   }
 };

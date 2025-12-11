@@ -10,7 +10,6 @@ export default {
       sans: ['Inter', 'system-ui', 'sans-serif'],
     },
       colors: {
-        border: '#0000',
         card: '#FAFAFA',
         button: '#FAFAFA',
         primary: '#0047EC',
