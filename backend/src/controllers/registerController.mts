@@ -17,7 +17,7 @@ export const createUser = async (data: RegisterRequest) => {
   const existingUser = await User.findOne({ email: data.email });
 
   if (existingUser) {
-    throw Error("User with email " + data.email + "already exists");
+    throw Error("User with email " + data.email + " already exists");
   }
 
   const salt = await bcrypt.genSalt(10);

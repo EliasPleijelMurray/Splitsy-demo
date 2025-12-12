@@ -1,18 +1,26 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Fake Receipt";
+  src: url("/fonts/Fake Receipt.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
 @theme {
   --font-sans: Inter, system-ui, sans-serif;
-  
+  --font-receipt: "Fake Receipt", monospace;
+
   --color-border: #0000;
-  --color-card: #FAFAFA;
-  --color-button: #FAFAFA;
-  --color-primary: #0047EC;
+  --color-card: #fafafa;
+  --color-button: #fafafa;
+  --color-primary: #0047ec;
 }
 
 body {
   font-family: var(--font-sans);
   color: black;
-  background-color: #FFF0C3;
+  background-color: #fff0c3;
 }
 
 h1 {
@@ -51,3 +59,6 @@ h6 {
   line-height: 1.5;
 }
 
+.font-receipt {
+  font-family: var(--font-receipt);
+}
