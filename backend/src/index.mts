@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import { registerRouter } from "./routes/registerRouter.mjs";
 import { loginRouter } from "./routes/loginRouter.mjs";
 import { authRouter } from "./routes/authRouter.mjs";
+import { groupRouter } from "./routes/groupRouter.mjs";
 import { auth } from "./middlewares/auth.mjs";
 
 dotenv.config();
@@ -30,6 +31,8 @@ app.use("/login", loginRouter);
 app.use("/", authRouter);
 
 app.use(auth);
+
+app.use("/groups", groupRouter);
 
 app.get("/ping", (req, res) => {
   res.status(200).json({ status: "api is working" });
