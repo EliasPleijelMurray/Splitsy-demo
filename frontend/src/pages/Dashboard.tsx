@@ -165,7 +165,7 @@ export const Dashboard = () => {
 
         {/* Right panel - Expenses and Add Expense */}
         {selectedGroup && (
-          <div className="flex-1 border-2 border-gray-800 bg-[#E8E3E3] p-6">
+          <div className="flex-1 border-2 border-gray-800 bg-card p-6">
             <h2 className="text-2xl font-semibold mb-6">
               {selectedGroup.name.toUpperCase()}
             </h2>
@@ -197,7 +197,7 @@ export const Dashboard = () => {
                     required
                     className="w-full p-2 border border-gray-400 bg-white"
                   >
-                    <option value="">Vem betalat?</option>
+                    <option value="">Who paid?</option>
                     {selectedGroup.members.map((member) => (
                       <option key={member.userId._id} value={member.userId._id}>
                         {member.userId.name}

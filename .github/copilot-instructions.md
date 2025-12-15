@@ -28,9 +28,14 @@
 
 **Mongoose schemas** with populated references:
 
-- `User` (basic auth + profile)
+- `User` (basic auth + profile) - registered as `"User"` model
 - `Group` (members array with embedded role/joinedAt, references User)
 - `Expense` (references Group, paidBy User, participants array of Users)
+
+**CRITICAL**: Model names in schemas must match exactly (case-sensitive):
+
+- User model: `model("User", UserSchema)`
+- References: `ref: "User"` (not `"user"`)
 
 **Population pattern**: Controllers use `.populate()` to resolve references:
 
@@ -111,4 +116,5 @@ declare global {
 - Auth middleware must be mounted AFTER public routes but BEFORE protected routes
 - Group membership verification: Controllers check `group.members.some(member => member.userId._id.toString() === userId)`
 - Mongoose `_id` is ObjectId type, convert to string for comparisons: `.toString()`
+- Mongoose model names are case-sensitive: ensure `model()` name matches all `ref:` declarations exactly
 - Frontend API calls default to `http://localhost:3001` if `VITE_API_URL` not set
