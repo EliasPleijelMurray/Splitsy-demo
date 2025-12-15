@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Group } from "../models/groupSchema.mjs";
 import { calculateGroupBalances } from "../services/balanceService.mjs";
+import { io } from "../index.mjs";
 
 // Extend Request type to include userId from auth middleware
 declare global {
@@ -141,6 +142,59 @@ export async function addMember(req: Request, res: Response) {
   } catch (error) {
     console.error("Error adding member:", error);
     res.status(500).json({ error: "Failed to add member" });
+  }
+}
+
+// Join group via invite link (authenticated users only)
+export async function joinGroup(req: Request, res: Response) {
+  try {
+    const { groupId } = req.params;
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    // Check if user is already a member
+    const alreadyMember = group.members.some(
+      (member) => member.userId.toString() === userId
+    );
+
+    if (alreadyMember) {
+      return res
+        .status(400)
+        .json({ error: "You are already a member of this group" });
+    }
+
+    // Add user as member
+    group.members.push({
+      userId: userId as any,
+      role: "member",
+      joinedAt: new Date(),
+    });
+
+    await group.save();
+
+    // Return populated group
+    const populatedGroup = await Group.findById(groupId)
+      .populate("createdBy", "name email")
+      .populate("members.userId", "name email");
+
+    // Emit Socket.IO event to all users in the group
+    io.to(`group-${groupId}`).emit("member-joined", {
+      groupId,
+      member: populatedGroup?.members[populatedGroup.members.length - 1],
+    });
+
+    res.status(200).json(populatedGroup);
+  } catch (error) {
+    console.error("Error joining group:", error);
+    res.status(500).json({ error: "Failed to join group" });
   }
 }
 

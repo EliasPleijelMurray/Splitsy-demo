@@ -100,6 +100,47 @@ declare global {
 }
 ```
 
+## Real-time Updates with Socket.IO
+
+**WebSocket integration** for live group updates:
+
+- Socket.IO server runs alongside Express on same port (`backend/src/index.mts`)
+- Export `io` instance to emit events from controllers
+- Frontend uses `useSocket` hook to maintain connection
+- Group-specific rooms: users join `group-${groupId}` rooms
+- Events emitted: `expense-created`, `member-joined`
+
+**Pattern for emitting events** in controllers:
+
+```typescript
+import { io } from "../index.mjs";
+io.to(`group-${groupId}`).emit("expense-created", expense);
+```
+
+**Pattern for listening** in React components:
+
+```typescript
+const socket = useSocket();
+useEffect(() => {
+  if (!socket) return;
+  socket.on("expense-created", (expense) => {
+    /* update state */
+  });
+  return () => {
+    socket.off("expense-created");
+  };
+}, [socket]);
+```
+
+## Group Invites
+
+**Invite system** allows sharing groups via link:
+
+- Frontend generates invite link: `${window.location.origin}/join/${groupId}`
+- `/join/:groupId` route (protected) automatically joins user to group
+- Backend `POST /groups/:groupId/join` endpoint adds authenticated user as member
+- Different from `POST /groups/:groupId/members` which requires admin role
+
 ## Frontend Conventions
 
 **Routing**: React Router v7 with `createBrowserRouter`, nested routes under `Layout`
@@ -107,6 +148,8 @@ declare global {
 **Protected routes**: Wrap in `<ProtectedRoute>` component which checks auth on mount and redirects to `/login`
 
 **Service layer pattern**: Frontend services (`authService`, `groupService`) encapsulate all API calls with typed interfaces, handle `credentials: "include"`
+
+**Custom hooks**: `useSocket` in `src/hooks/` manages Socket.IO connection lifecycle
 
 **Styling**: Tailwind CSS v4 with PostCSS setup
 

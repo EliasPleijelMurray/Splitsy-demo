@@ -4,6 +4,7 @@ import {
   getUserGroups,
   getGroupById,
   addMember,
+  joinGroup,
   getGroupBalances,
 } from "../controllers/groupController.mjs";
 
@@ -18,8 +19,11 @@ groupRouter.get("/", getUserGroups);
 // Get specific group by ID
 groupRouter.get("/:groupId", getGroupById);
 
-// Add member to group
+// Add member to group (by admin)
 groupRouter.post("/:groupId/members", addMember);
+
+// Join group via invite link
+groupRouter.post("/:groupId/join", joinGroup);
 
 // Get balances for a group
 groupRouter.get("/:groupId/balances", getGroupBalances);

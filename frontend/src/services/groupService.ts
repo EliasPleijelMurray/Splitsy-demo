@@ -147,6 +147,20 @@ export const groupService = {
 
     return response.json();
   },
+
+  async joinGroup(groupId: string): Promise<Group> {
+    const response = await fetch(`${API_URL}/groups/${groupId}/join`, {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to join group");
+    }
+
+    return response.json();
+  },
 };
 
 export const expenseService = {

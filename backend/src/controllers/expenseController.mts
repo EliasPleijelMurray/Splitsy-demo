@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Expense } from "../models/expenseSchema.mjs";
 import { Group } from "../models/groupSchema.mjs";
+import { io } from "../index.mjs";
 
 // Create a new expense
 export async function createExpense(req: Request, res: Response) {
@@ -47,6 +48,9 @@ export async function createExpense(req: Request, res: Response) {
     const populatedExpense = await Expense.findById(expense._id)
       .populate("paidBy", "name")
       .populate("participants", "name");
+
+    // Emit Socket.IO event to all users in the group
+    io.to(`group-${groupId}`).emit("expense-created", populatedExpense);
 
     res.status(201).json(populatedExpense);
   } catch (error) {

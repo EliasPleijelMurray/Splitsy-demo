@@ -7,12 +7,14 @@ import {
   type CreateGroupData,
   type CreateExpenseData,
 } from "../services/groupService";
+import { useSocket } from "../hooks/useSocket";
 
 export const Dashboard = () => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showNewGroupForm, setShowNewGroupForm] = useState(false);
+  const socket = useSocket();
 
   // New group form
   const [newGroupName, setNewGroupName] = useState("");
@@ -31,8 +33,45 @@ export const Dashboard = () => {
   useEffect(() => {
     if (selectedGroup) {
       loadExpenses(selectedGroup._id);
+
+      // Join the Socket.IO room for this group
+      if (socket) {
+        socket.emit("join-group", selectedGroup._id);
+      }
     }
-  }, [selectedGroup]);
+
+    // Cleanup: leave the room when switching groups
+    return () => {
+      if (selectedGroup && socket) {
+        socket.emit("leave-group", selectedGroup._id);
+      }
+    };
+  }, [selectedGroup, socket]);
+
+  // Socket.IO listeners for real-time updates
+  useEffect(() => {
+    if (!socket) return;
+
+    // Listen for new expenses
+    socket.on("expense-created", (expense: Expense) => {
+      if (selectedGroup && expense.groupId === selectedGroup._id) {
+        setExpenses((prev) => [...prev, expense]);
+      }
+    });
+
+    // Listen for new members
+    socket.on("member-joined", ({ groupId }: { groupId: string }) => {
+      if (selectedGroup && groupId === selectedGroup._id) {
+        // Reload the group to get updated member list
+        loadGroups();
+      }
+    });
+
+    return () => {
+      socket.off("expense-created");
+      socket.off("member-joined");
+    };
+  }, [socket, selectedGroup]);
 
   const loadGroups = async () => {
     try {
@@ -166,9 +205,21 @@ export const Dashboard = () => {
         {/* Right panel - Expenses and Add Expense */}
         {selectedGroup && (
           <div className="flex-1 border-2 border-gray-800 bg-card p-6">
-            <h2 className="text-2xl font-semibold mb-6">
-              {selectedGroup.name.toUpperCase()}
-            </h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold">
+                {selectedGroup.name.toUpperCase()}
+              </h2>
+              <button
+                onClick={() => {
+                  const inviteLink = `${window.location.origin}/join/${selectedGroup._id}`;
+                  navigator.clipboard.writeText(inviteLink);
+                  alert("Invite link copied to clipboard!");
+                }}
+                className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 text-sm"
+              >
+                Copy invite link
+              </button>
+            </div>
 
             <div className="flex gap-6">
               {/* Expenses list */}
@@ -178,7 +229,7 @@ export const Dashboard = () => {
                   {expenses.map((expense) => (
                     <div
                       key={expense._id}
-                      className="flex justify-between text-sm"
+                      className="flex justify-between text-sm font-receipt"
                     >
                       <span>{expense.paidBy.name.toUpperCase()}</span>
                       <span>{expense.amount.toFixed(2)}</span>
