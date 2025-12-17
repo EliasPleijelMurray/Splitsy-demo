@@ -6,7 +6,9 @@ import {
   type Expense,
   type CreateGroupData,
   type CreateExpenseData,
+  type BalanceResult,
 } from "../services/groupService";
+import { authService, type User } from "../services/authService";
 import { useSocket } from "../hooks/useSocket";
 
 export const Dashboard = () => {
@@ -15,6 +17,14 @@ export const Dashboard = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showNewGroupForm, setShowNewGroupForm] = useState(false);
   const socket = useSocket();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Balance & settlement state
+  const [balanceResult, setBalanceResult] = useState<BalanceResult | null>(
+    null
+  );
+  const [isLoadingBalances, setIsLoadingBalances] = useState(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
 
   // New group form
   const [newGroupName, setNewGroupName] = useState("");
@@ -27,6 +37,12 @@ export const Dashboard = () => {
   const [expenseParticipants, setExpenseParticipants] = useState<string[]>([]);
 
   useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const user = await authService.getCurrentUser();
+      setCurrentUser(user);
+    };
+
+    fetchCurrentUser();
     loadGroups();
   }, []);
 
@@ -56,6 +72,7 @@ export const Dashboard = () => {
     socket.on("expense-created", (expense: Expense) => {
       if (selectedGroup && expense.groupId === selectedGroup._id) {
         setExpenses((prev) => [...prev, expense]);
+        loadGroupBalances(selectedGroup._id);
       }
     });
 
@@ -86,8 +103,23 @@ export const Dashboard = () => {
     try {
       const fetchedExpenses = await expenseService.getGroupExpenses(groupId);
       setExpenses(fetchedExpenses);
+      loadGroupBalances(groupId);
     } catch (error) {
       console.error("Failed to load expenses:", error);
+    }
+  };
+
+  const loadGroupBalances = async (groupId: string) => {
+    setIsLoadingBalances(true);
+    setBalanceError(null);
+    try {
+      const result = await groupService.getGroupBalances(groupId);
+      setBalanceResult(result);
+    } catch (error) {
+      console.error("Failed to fetch balances:", error);
+      setBalanceError("Could not load who owes who right now.");
+    } finally {
+      setIsLoadingBalances(false);
     }
   };
 
@@ -124,6 +156,7 @@ export const Dashboard = () => {
       };
       const newExpense = await expenseService.createExpense(expenseData);
       setExpenses([...expenses, newExpense]);
+      loadGroupBalances(selectedGroup._id);
       setExpenseAmount("");
       setExpenseDescription("");
       setExpensePaidBy("");
@@ -133,6 +166,12 @@ export const Dashboard = () => {
       alert("Failed to add expense");
     }
   };
+
+  // Reset balance view when switching groups
+  useEffect(() => {
+    setBalanceResult(null);
+    setBalanceError(null);
+  }, [selectedGroup?._id ?? null]);
 
   return (
     <div className="min-h-screen p-8">
@@ -236,6 +275,94 @@ export const Dashboard = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Balance summary */}
+              <div className="border-l-2 border-dashed border-gray-800 pl-6 w-96">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold">WHO OWES WHO</h3>
+                  {balanceError && (
+                    <span className="text-xs text-red-600">{balanceError}</span>
+                  )}
+                </div>
+
+                {balanceResult ? (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600">Members</p>
+                      {balanceResult.balances.map((balance) => {
+                        const isCurrentUser =
+                          currentUser && balance.userId === currentUser.id;
+                        const net = balance.balance;
+                        const statusLabel =
+                          net > 0.01
+                            ? `is owed ${net.toFixed(2)}`
+                            : net < -0.01
+                            ? `owes ${Math.abs(net).toFixed(2)}`
+                            : "is settled";
+
+                        return (
+                          <div
+                            key={balance.userId}
+                            className={`p-3 border border-gray-200 bg-white text-sm ${
+                              isCurrentUser ? "bg-yellow-50" : ""
+                            }`}
+                          >
+                            <div className="flex justify-between">
+                              <span className="font-semibold">
+                                {balance.name}
+                                {isCurrentUser ? " (you)" : ""}
+                              </span>
+                              <span>{statusLabel}</span>
+                            </div>
+                            <div className="text-xs text-gray-600 mt-1 flex justify-between">
+                              <span>Paid: {balance.totalPaid.toFixed(2)}</span>
+                              <span>
+                                Share: {balance.totalShare.toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600">
+                        Suggested settlements
+                      </p>
+                      {balanceResult.settlements.length === 0 && (
+                        <div className="p-3 border border-gray-200 bg-white text-sm">
+                          Everything is already settled.
+                        </div>
+                      )}
+                      {balanceResult.settlements.map((settlement, index) => {
+                        const involvesUser =
+                          currentUser &&
+                          (settlement.from === currentUser.id ||
+                            settlement.to === currentUser.id);
+                        return (
+                          <div
+                            key={`${settlement.from}-${settlement.to}-${index}`}
+                            className={`p-3 border border-gray-200 bg-white text-sm flex justify-between ${
+                              involvesUser ? "bg-green-50" : ""
+                            }`}
+                          >
+                            <span>
+                              {settlement.fromName} → {settlement.toName}
+                            </span>
+                            <span>{settlement.amount.toFixed(2)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 border border-gray-200 bg-white text-sm">
+                    {isLoadingBalances
+                      ? "Calculating who owes who..."
+                      : "No balance data yet."}
+                  </div>
+                )}
               </div>
 
               {/* Add expense form */}
