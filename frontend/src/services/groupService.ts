@@ -15,7 +15,6 @@ export interface Group {
   }>;
   createdBy: string;
   createdAt: string;
-  currency?: string;
 }
 
 export interface Expense {
@@ -37,7 +36,6 @@ export interface Expense {
 export interface CreateGroupData {
   name: string;
   description?: string;
-  currency?: string;
 }
 
 export interface CreateExpenseData {

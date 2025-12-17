@@ -15,7 +15,7 @@ declare global {
 // Create a new group
 export async function createGroup(req: Request, res: Response) {
   try {
-    const { name, description, currency } = req.body;
+    const { name, description } = req.body;
     const userId = req.userId; // From auth middleware
 
     if (!name) {
@@ -25,7 +25,6 @@ export async function createGroup(req: Request, res: Response) {
     const group = new Group({
       name,
       description: description || "",
-      currency: currency || "USD",
       createdBy: userId,
       members: [
         {
@@ -162,13 +161,16 @@ export async function joinGroup(req: Request, res: Response) {
 
     // Check if user is already a member
     const alreadyMember = group.members.some(
-      (member) => member.userId.toString() === userId
+      (member) => member.userId.toString() === userId.toString()
     );
 
     if (alreadyMember) {
-      return res
-        .status(400)
-        .json({ error: "You are already a member of this group" });
+      // Return populated group if already a member (don't add duplicate)
+      const populatedGroup = await Group.findById(groupId)
+        .populate("createdBy", "name email")
+        .populate("members.userId", "name email");
+
+      return res.status(200).json(populatedGroup);
     }
 
     // Add user as member
