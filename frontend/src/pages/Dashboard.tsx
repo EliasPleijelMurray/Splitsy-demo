@@ -36,6 +36,22 @@ export const Dashboard = () => {
   const [expensePaidBy, setExpensePaidBy] = useState("");
   const [expenseParticipants, setExpenseParticipants] = useState<string[]>([]);
 
+  const getDefaultPayerId = () => {
+    if (!selectedGroup) return "";
+    const ids = selectedGroup.members.map((m) => m.userId._id);
+    if (currentUser?.id && ids.includes(currentUser.id)) return currentUser.id;
+    return ids[0] ?? "";
+  };
+
+  const dedupeExpenses = (list: Expense[]) => {
+    const seen = new Set<string>();
+    return list.filter((item) => {
+      if (seen.has(item._id)) return false;
+      seen.add(item._id);
+      return true;
+    });
+  };
+
   useEffect(() => {
     const fetchCurrentUser = async () => {
       const user = await authService.getCurrentUser();
@@ -71,7 +87,7 @@ export const Dashboard = () => {
     // Listen for new expenses
     socket.on("expense-created", (expense: Expense) => {
       if (selectedGroup && expense.groupId === selectedGroup._id) {
-        setExpenses((prev) => [...prev, expense]);
+        setExpenses((prev) => dedupeExpenses([...prev, expense]));
         loadGroupBalances(selectedGroup._id);
       }
     });
@@ -102,7 +118,7 @@ export const Dashboard = () => {
   const loadExpenses = async (groupId: string) => {
     try {
       const fetchedExpenses = await expenseService.getGroupExpenses(groupId);
-      setExpenses(fetchedExpenses);
+      setExpenses(dedupeExpenses(fetchedExpenses));
       loadGroupBalances(groupId);
     } catch (error) {
       console.error("Failed to load expenses:", error);
@@ -155,16 +171,30 @@ export const Dashboard = () => {
         participants: expenseParticipants,
       };
       const newExpense = await expenseService.createExpense(expenseData);
-      setExpenses([...expenses, newExpense]);
+      setExpenses((prev) => dedupeExpenses([...prev, newExpense]));
       loadGroupBalances(selectedGroup._id);
       setExpenseAmount("");
       setExpenseDescription("");
-      setExpensePaidBy("");
-      setExpenseParticipants([]);
+      setExpensePaidBy(getDefaultPayerId());
+      setExpenseParticipants(
+        selectedGroup.members.map((member) => member.userId._id)
+      );
     } catch (error) {
       console.error("Failed to add expense:", error);
       alert("Failed to add expense");
     }
+  };
+
+  const handleKeypadPress = (key: string) => {
+    setExpenseAmount((prev) => {
+      if (key === "clear") return "";
+      if (key === "back") return prev.slice(0, -1);
+      if (key === ".") {
+        if (prev.includes(".")) return prev;
+        return prev === "" ? "0." : `${prev}.`;
+      }
+      return `${prev}${key}`;
+    });
   };
 
   // Reset balance view when switching groups
@@ -173,8 +203,26 @@ export const Dashboard = () => {
     setBalanceError(null);
   }, [selectedGroup?._id ?? null]);
 
+  // Default all members as participants when a group is selected
+  useEffect(() => {
+    if (selectedGroup) {
+      setExpenseParticipants(
+        selectedGroup.members.map((member) => member.userId._id)
+      );
+    } else {
+      setExpenseParticipants([]);
+    }
+  }, [selectedGroup]);
+
+  // Default payer to current user (if in group) when a group is selected
+  useEffect(() => {
+    if (!selectedGroup) return;
+    const preferred = getDefaultPayerId();
+    setExpensePaidBy((prev) => prev || preferred || "");
+  }, [selectedGroup, currentUser]);
+
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-full max-w-[1500px] mx-auto p-8">
       <div className="flex gap-6">
         {/* Left sidebar - Groups */}
         <div className="w-80">
@@ -243,7 +291,7 @@ export const Dashboard = () => {
 
         {/* Right panel - Expenses and Add Expense */}
         {selectedGroup && (
-          <div className="flex-1 border-2 border-gray-800 bg-card p-6">
+          <div className="flex-1 border-1 border-black bg-card p-6 transform mt-4 translate-y-10">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold">
                 {selectedGroup.name.toUpperCase()}
@@ -280,7 +328,7 @@ export const Dashboard = () => {
               {/* Balance summary */}
               <div className="border-l-2 border-dashed border-gray-800 pl-6 w-96">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold">WHO OWES WHO</h3>
+                  <h3 className="text-lg font-semibold"></h3>
                   {balanceError && (
                     <span className="text-xs text-red-600">{balanceError}</span>
                   )}
@@ -367,7 +415,7 @@ export const Dashboard = () => {
 
               {/* Add expense form */}
               <div className="border-l-2 border-dashed border-gray-800 pl-6 w-80">
-                <h3 className="text-lg font-semibold mb-4">ADD EXPENCE</h3>
+                <h3 className="text-lg font-semibold mb-4">Add expense</h3>
                 <form onSubmit={handleAddExpense} className="space-y-3">
                   <select
                     value={expensePaidBy}
@@ -375,54 +423,91 @@ export const Dashboard = () => {
                     required
                     className="w-full p-2 border border-gray-400 bg-white"
                   >
-                    <option value="">Who paid?</option>
                     {selectedGroup.members.map((member) => (
                       <option key={member.userId._id} value={member.userId._id}>
-                        {member.userId.name}
+                        {member.userId.name} paid
                       </option>
                     ))}
                   </select>
 
                   <input
                     type="text"
-                    placeholder="Beskrivning"
+                    placeholder="Description"
                     value={expenseDescription}
                     onChange={(e) => setExpenseDescription(e.target.value)}
                     className="w-full p-2 border border-gray-400 bg-white"
                   />
 
                   <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Summa"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Amount"
                     value={expenseAmount}
                     onChange={(e) => setExpenseAmount(e.target.value)}
                     required
                     className="w-full p-2 border border-gray-400 bg-white"
                   />
 
-                  <select
-                    multiple
-                    value={expenseParticipants}
-                    onChange={(e) => {
-                      const selected = Array.from(
-                        e.target.selectedOptions,
-                        (option) => option.value
-                      );
-                      setExpenseParticipants(selected);
-                    }}
-                    className="w-full p-2 border border-gray-400 bg-white"
-                    size={Math.min(selectedGroup.members.length, 4)}
-                  >
-                    <option value="" disabled>
-                      Vilka delade?
-                    </option>
-                    {selectedGroup.members.map((member) => (
-                      <option key={member.userId._id} value={member.userId._id}>
-                        {member.userId.name}
-                      </option>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      "1",
+                      "2",
+                      "3",
+                      "4",
+                      "5",
+                      "6",
+                      "7",
+                      "8",
+                      "9",
+                      ".",
+                      "0",
+                      "back",
+                    ].map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className="py-2 border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                        onClick={() =>
+                          handleKeypadPress(key === "back" ? "back" : key)
+                        }
+                      >
+                        {key === "back" ? "⌫" : key}
+                      </button>
                     ))}
-                  </select>
+                  </div>
+                  <button
+                    type="button"
+                    className="w-full py-2 border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                    onClick={() => handleKeypadPress("clear")}
+                  >
+                    Clear
+                  </button>
+
+                  <div className="space-y-2 border border-gray-400 bg-white p-2 max-h-48 overflow-y-auto">
+                    {selectedGroup.members.map((member) => {
+                      const id = member.userId._id;
+                      const checked = expenseParticipants.includes(id);
+                      return (
+                        <label
+                          key={id}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setExpenseParticipants((prev) =>
+                                prev.includes(id)
+                                  ? prev.filter((pid) => pid !== id)
+                                  : [...prev, id]
+                              );
+                            }}
+                          />
+                          <span>{member.userId.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
 
                   <button
                     type="submit"
@@ -433,14 +518,6 @@ export const Dashboard = () => {
                 </form>
               </div>
             </div>
-          </div>
-        )}
-
-        {!selectedGroup && groups.length > 0 && (
-          <div className="flex-1 border-2 border-gray-800 bg-[#E8E3E3] p-6 flex items-center justify-center">
-            <p className="text-gray-600 text-lg">
-              Select a group to view expenses
-            </p>
           </div>
         )}
       </div>
