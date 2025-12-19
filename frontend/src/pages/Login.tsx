@@ -140,7 +140,7 @@ export const Login = () => {
                     htmlFor="name"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Full Name
+                    Name
                   </label>
                   <input
                     id="name"
@@ -150,7 +150,7 @@ export const Login = () => {
                     value={formData.name}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border-2 border-gray-300 rounded focus:outline-none focus:border-black"
-                    placeholder="John Doe"
+                    placeholder="Elias"
                   />
                 </div>
               )}

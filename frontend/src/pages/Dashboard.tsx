@@ -488,7 +488,7 @@ export const Dashboard = () => {
 
                   <input
                     type="text"
-                    placeholder="Description"
+                    placeholder="Description (optional)"
                     value={expenseDescription}
                     onChange={(e) => setExpenseDescription(e.target.value)}
                     className="w-full p-2 border border-gray-400 bg-white"
