@@ -18,6 +18,7 @@ export const Dashboard = () => {
   const [showNewGroupForm, setShowNewGroupForm] = useState(false);
   const socket = useSocket();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
   // Balance & settlement state
   const [balanceResult, setBalanceResult] = useState<BalanceResult | null>(
@@ -222,7 +223,7 @@ export const Dashboard = () => {
   }, [selectedGroup, currentUser]);
 
   return (
-    <div className="min-h-full max-w-[1500px] mx-auto p-8">
+    <div className="min-h-full max-w-[1500px] mx-auto px-8 ">
       <div className="flex gap-6">
         {/* Left sidebar - Groups */}
         <div className="w-80">
@@ -249,49 +250,100 @@ export const Dashboard = () => {
           >
             New group
           </button>
-
-          {showNewGroupForm && (
-            <form
-              onSubmit={handleCreateGroup}
-              className="mt-4 p-4 border border-gray-800 bg-white"
-            >
-              <input
-                type="text"
-                placeholder="Group name"
-                value={newGroupName}
-                onChange={(e) => setNewGroupName(e.target.value)}
-                required
-                className="w-full p-2 mb-2 border border-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Description (optional)"
-                value={newGroupDescription}
-                onChange={(e) => setNewGroupDescription(e.target.value)}
-                className="w-full p-2 mb-2 border border-gray-400"
-              />
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
-                >
-                  Create
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowNewGroupForm(false)}
-                  className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
         </div>
+
+        {/* Expense Detail Modal */}
+        {selectedExpense && (
+          <div
+            className="fixed inset-0 flex items-center justify-center z-50"
+            onClick={() => setSelectedExpense(null)}
+          >
+            <div
+              className="bg-white border border-gray-800 p-6 w-96 max-w-[90vw]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-semibold mb-4">Expense Details</h3>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-gray-600">Description</p>
+                  <p className="font-medium">{selectedExpense.description}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Amount</p>
+                  <p className="font-medium">
+                    {selectedExpense.amount.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Paid by</p>
+                  <p className="font-medium">{selectedExpense.paidBy.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Date</p>
+                  <p className="font-medium">
+                    {new Date(selectedExpense.date).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Participants</p>
+                  <p className="font-medium">
+                    {selectedExpense.participants.map((p) => p.name).join(", ")}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedExpense(null)}
+                className="mt-4 w-full px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Modal overlay */}
+        {showNewGroupForm && (
+          <div
+            className="fixed inset-0 flex items-center justify-center z-50"
+            onClick={() => setShowNewGroupForm(false)}
+          >
+            <div
+              className="bg-white border border-gray-800 p-6 w-96 max-w-[90vw]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-semibold mb-4">Create New Group</h3>
+              <form onSubmit={handleCreateGroup} className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Group name"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  required
+                  className="w-full p-2 border border-gray-400"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewGroupForm(false)}
+                    className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
+                  >
+                    Create
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Right panel - Expenses and Add Expense */}
         {selectedGroup && (
-          <div className="flex-1 border-1 border-black bg-card p-6 transform mt-4 translate-y-10">
+          <div className="flex-1 border-1 border-black bg-card p-6 transform mt-4 translate-y-10 max-h-[700px]">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold">
                 {selectedGroup.name.toUpperCase()}
@@ -311,12 +363,13 @@ export const Dashboard = () => {
             <div className="flex gap-6">
               {/* Expenses list */}
               <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-4">EXPENCES</h3>
-                <div className="space-y-2">
+                <h3 className="text-lg font-semibold mb-4">Expenses</h3>
+                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
                   {expenses.map((expense) => (
                     <div
                       key={expense._id}
-                      className="flex justify-between text-sm font-receipt"
+                      className="flex justify-between text-sm font-receipt mb-4 border p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                      onClick={() => setSelectedExpense(expense)}
                     >
                       <span>{expense.paidBy.name.toUpperCase()}</span>
                       <span>{expense.amount.toFixed(2)}</span>
@@ -327,7 +380,7 @@ export const Dashboard = () => {
 
               {/* Balance summary */}
               <div className="border-l-2 border-dashed border-gray-800 pl-6 w-96">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold"></h3>
                   {balanceError && (
                     <span className="text-xs text-red-600">{balanceError}</span>
@@ -336,6 +389,9 @@ export const Dashboard = () => {
 
                 {balanceResult ? (
                   <div className="space-y-4">
+                    <h3 className="text-lg font-semibold mb-4">
+                      Suggested settlements
+                    </h3>
                     <div className="space-y-2">
                       <p className="text-sm text-gray-600">Members</p>
                       {balanceResult.balances.map((balance) => {
