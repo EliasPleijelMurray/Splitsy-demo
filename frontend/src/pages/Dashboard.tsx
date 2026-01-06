@@ -37,6 +37,11 @@ export const Dashboard = () => {
   const [expensePaidBy, setExpensePaidBy] = useState("");
   const [expenseParticipants, setExpenseParticipants] = useState<string[]>([]);
 
+  // Join by link form
+  const [showJoinByLinkForm, setShowJoinByLinkForm] = useState(false);
+  const [inviteLinkInput, setInviteLinkInput] = useState("");
+  const [joinError, setJoinError] = useState<string | null>(null);
+
   const getDefaultPayerId = () => {
     if (!selectedGroup) return "";
     const ids = selectedGroup.members.map((m) => m.userId._id);
@@ -198,6 +203,37 @@ export const Dashboard = () => {
     });
   };
 
+  const handleJoinByLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setJoinError(null);
+
+    try {
+      // Extract group ID from the invite link
+      // Expected format: http://localhost:5173/join/groupId or https://domain.com/join/groupId
+      const urlPattern = /\/join\/([a-zA-Z0-9]+)/;
+      const match = inviteLinkInput.match(urlPattern);
+
+      if (!match || !match[1]) {
+        setJoinError("Invalid invite link format");
+        return;
+      }
+
+      const groupId = match[1];
+      await groupService.joinGroup(groupId);
+
+      // Reload groups to include the newly joined group
+      await loadGroups();
+
+      setInviteLinkInput("");
+      setShowJoinByLinkForm(false);
+      alert("Successfully joined the group!");
+    } catch (error) {
+      setJoinError(
+        error instanceof Error ? error.message : "Failed to join group"
+      );
+    }
+  };
+
   // Reset balance view when switching groups
   useEffect(() => {
     setBalanceResult(null);
@@ -244,12 +280,20 @@ export const Dashboard = () => {
             ))}
           </div>
 
-          <button
-            onClick={() => setShowNewGroupForm(!showNewGroupForm)}
-            className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 transition-colors"
-          >
-            New group
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowNewGroupForm(!showNewGroupForm)}
+              className="flex-1 px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 transition-colors"
+            >
+              New group
+            </button>
+            <button
+              onClick={() => setShowJoinByLinkForm(!showJoinByLinkForm)}
+              className="flex-1 px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 transition-colors"
+            >
+              Join by link
+            </button>
+          </div>
         </div>
 
         {/* Expense Detail Modal */}
@@ -334,6 +378,63 @@ export const Dashboard = () => {
                     className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
                   >
                     Create
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Join by link modal */}
+        {showJoinByLinkForm && (
+          <div
+            className="fixed inset-0 flex items-center justify-center z-50"
+            onClick={() => {
+              setShowJoinByLinkForm(false);
+              setJoinError(null);
+              setInviteLinkInput("");
+            }}
+          >
+            <div
+              className="bg-white border border-gray-800 p-6 w-96 max-w-[90vw]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-semibold mb-4">Join Group by Link</h3>
+              <form onSubmit={handleJoinByLink} className="space-y-4">
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Paste invite link here"
+                    value={inviteLinkInput}
+                    onChange={(e) => {
+                      setInviteLinkInput(e.target.value);
+                      setJoinError(null);
+                    }}
+                    required
+                    className="w-full p-2 border border-gray-400"
+                  />
+                  {joinError && (
+                    <p className="text-black text-sm mt-2">{joinError}</p>
+                  )}
+                  <p className="text-gray-600 text-xs mt-2"></p>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowJoinByLinkForm(false);
+                      setJoinError(null);
+                      setInviteLinkInput("");
+                    }}
+                    className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
+                  >
+                    Join Group
                   </button>
                 </div>
               </form>

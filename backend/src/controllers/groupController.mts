@@ -165,12 +165,7 @@ export async function joinGroup(req: Request, res: Response) {
     );
 
     if (alreadyMember) {
-      // Return populated group if already a member (don't add duplicate)
-      const populatedGroup = await Group.findById(groupId)
-        .populate("createdBy", "name email")
-        .populate("members.userId", "name email");
-
-      return res.status(200).json(populatedGroup);
+      return res.status(400).json({ error: "You are already in this group!" });
     }
 
     // Add user as member
