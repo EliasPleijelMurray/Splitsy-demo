@@ -3,7 +3,7 @@ import { Home } from "./pages/Home";
 import { Layout } from "./pages/Layout";
 import { Dashboard } from "./pages/Dashboard";
 import { Login } from "./pages/Login";
-import { JoinGroup } from "./pages/JoinGroup";
+import { JoinGroup } from "./components/JoinGroup";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 export const router = createBrowserRouter([
