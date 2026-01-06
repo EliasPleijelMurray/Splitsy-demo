@@ -462,8 +462,114 @@ export const Dashboard = () => {
             </div>
 
             <div className="flex gap-6">
+              {/* Add expense form */}
+              <div className="w-80">
+                <h3 className="text-lg font-semibold mb-4">Add expense</h3>
+                <form onSubmit={handleAddExpense} className="space-y-3">
+                  <select
+                    value={expensePaidBy}
+                    onChange={(e) => setExpensePaidBy(e.target.value)}
+                    required
+                    className="w-full p-2 border border-gray-400 bg-white"
+                  >
+                    {selectedGroup.members.map((member) => (
+                      <option key={member.userId._id} value={member.userId._id}>
+                        {member.userId.name} paid
+                      </option>
+                    ))}
+                  </select>
+
+                  <input
+                    type="text"
+                    placeholder="Description (optional)"
+                    value={expenseDescription}
+                    onChange={(e) => setExpenseDescription(e.target.value)}
+                    className="w-full p-2 border border-gray-400 bg-white"
+                  />
+
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Amount"
+                    value={expenseAmount}
+                    onChange={(e) => setExpenseAmount(e.target.value)}
+                    required
+                    className="w-full p-2 border border-gray-400 bg-white"
+                  />
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      "1",
+                      "2",
+                      "3",
+                      "4",
+                      "5",
+                      "6",
+                      "7",
+                      "8",
+                      "9",
+                      ".",
+                      "0",
+                      "back",
+                    ].map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className="py-2 border border-gray-300 bg-white hover:bg-gray-50 text-sm cursor-pointer"
+                        onClick={() =>
+                          handleKeypadPress(key === "back" ? "back" : key)
+                        }
+                      >
+                        {key === "back" ? "⌫" : key}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="w-full py-2 border border-gray-300 bg-white hover:bg-gray-50 text-sm cursor-pointer"
+                    onClick={() => handleKeypadPress("clear")}
+                  >
+                    Clear
+                  </button>
+
+                  <div className="space-y-2 border border-gray-400 bg-white p-2 max-h-28 overflow-y-auto">
+                    {selectedGroup.members.map((member) => {
+                      const id = member.userId._id;
+                      const checked = expenseParticipants.includes(id);
+                      return (
+                        <label
+                          key={id}
+                          className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50"
+                        >
+                          <input
+                            className="cursor-pointer"
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setExpenseParticipants((prev) =>
+                                prev.includes(id)
+                                  ? prev.filter((pid) => pid !== id)
+                                  : [...prev, id]
+                              );
+                            }}
+                          />
+                          <span>{member.userId.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="px-6 py-1 border border-gray-800 bg-white cursor-pointer hover:bg-gray-50"
+                  >
+                    add
+                  </button>
+                </form>
+              </div>
+
               {/* Expenses list */}
-              <div className="flex-1">
+              <div className="flex-1 border-l-2 border-dashed border-gray-800 pl-6">
                 <h3 className="text-lg font-semibold mb-4">Expenses</h3>
                 <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
                   {expenses.map((expense) => (
@@ -568,112 +674,6 @@ export const Dashboard = () => {
                       : "No balance data yet."}
                   </div>
                 )}
-              </div>
-
-              {/* Add expense form */}
-              <div className="border-l-2 border-dashed border-gray-800 pl-6 w-80">
-                <h3 className="text-lg font-semibold mb-4">Add expense</h3>
-                <form onSubmit={handleAddExpense} className="space-y-3">
-                  <select
-                    value={expensePaidBy}
-                    onChange={(e) => setExpensePaidBy(e.target.value)}
-                    required
-                    className="w-full p-2 border border-gray-400 bg-white"
-                  >
-                    {selectedGroup.members.map((member) => (
-                      <option key={member.userId._id} value={member.userId._id}>
-                        {member.userId.name} paid
-                      </option>
-                    ))}
-                  </select>
-
-                  <input
-                    type="text"
-                    placeholder="Description (optional)"
-                    value={expenseDescription}
-                    onChange={(e) => setExpenseDescription(e.target.value)}
-                    className="w-full p-2 border border-gray-400 bg-white"
-                  />
-
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="Amount"
-                    value={expenseAmount}
-                    onChange={(e) => setExpenseAmount(e.target.value)}
-                    required
-                    className="w-full p-2 border border-gray-400 bg-white"
-                  />
-
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      "1",
-                      "2",
-                      "3",
-                      "4",
-                      "5",
-                      "6",
-                      "7",
-                      "8",
-                      "9",
-                      ".",
-                      "0",
-                      "back",
-                    ].map((key) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className="py-2 border border-gray-300 bg-white hover:bg-gray-50 text-sm cursor-pointer"
-                        onClick={() =>
-                          handleKeypadPress(key === "back" ? "back" : key)
-                        }
-                      >
-                        {key === "back" ? "⌫" : key}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    className="w-full py-2 border border-gray-300 bg-white hover:bg-gray-50 text-sm cursor-pointer"
-                    onClick={() => handleKeypadPress("clear")}
-                  >
-                    Clear
-                  </button>
-
-                  <div className="space-y-2 border border-gray-400 bg-white p-2 max-h-28 overflow-y-auto">
-                    {selectedGroup.members.map((member) => {
-                      const id = member.userId._id;
-                      const checked = expenseParticipants.includes(id);
-                      return (
-                        <label
-                          key={id}
-                          className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50"
-                        >
-                          <input
-                            className="cursor-pointer"
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => {
-                              setExpenseParticipants((prev) =>
-                                prev.includes(id)
-                                  ? prev.filter((pid) => pid !== id)
-                                  : [...prev, id]
-                              );
-                            }}
-                          />
-                          <span>{member.userId.name}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="px-6 py-1 border border-gray-800 bg-white cursor-pointer hover:bg-gray-50"
-                  >
-                    add
-                  </button>
-                </form>
               </div>
             </div>
           </div>
