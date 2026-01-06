@@ -270,7 +270,7 @@ export const Dashboard = () => {
               <button
                 key={group._id}
                 onClick={() => setSelectedGroup(group)}
-                className={`w-full text-left p-4 border border-gray-800 bg-white hover:bg-gray-50 transition-colors flex justify-between items-center ${
+                className={`w-full text-left p-4 border border-gray-800 bg-white hover:bg-gray-50 transition-colors flex justify-between items-center cursor-pointer ${
                   selectedGroup?._id === group._id ? "bg-gray-100" : ""
                 }`}
               >
@@ -283,13 +283,13 @@ export const Dashboard = () => {
           <div className="flex gap-2">
             <button
               onClick={() => setShowNewGroupForm(!showNewGroupForm)}
-              className="flex-1 px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
             >
               New group
             </button>
             <button
               onClick={() => setShowJoinByLinkForm(!showJoinByLinkForm)}
-              className="flex-1 px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
             >
               Join by link
             </button>
@@ -299,7 +299,7 @@ export const Dashboard = () => {
         {/* Expense Detail Modal */}
         {selectedExpense && (
           <div
-            className="fixed inset-0 flex items-center justify-center z-50"
+            className="fixed inset-0 flex items-center justify-center z-50 cursor-pointer"
             onClick={() => setSelectedExpense(null)}
           >
             <div
@@ -337,7 +337,7 @@ export const Dashboard = () => {
               </div>
               <button
                 onClick={() => setSelectedExpense(null)}
-                className="mt-4 w-full px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
+                className="mt-4 w-full px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 cursor-pointer"
               >
                 Close
               </button>
@@ -348,7 +348,7 @@ export const Dashboard = () => {
         {/* Modal overlay */}
         {showNewGroupForm && (
           <div
-            className="fixed inset-0 flex items-center justify-center z-50"
+            className="fixed inset-0 flex items-center justify-center z-50 cursor-pointer"
             onClick={() => setShowNewGroupForm(false)}
           >
             <div
@@ -369,13 +369,13 @@ export const Dashboard = () => {
                   <button
                     type="button"
                     onClick={() => setShowNewGroupForm(false)}
-                    className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
+                    className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
+                    className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 cursor-pointer"
                   >
                     Create
                   </button>
@@ -388,7 +388,7 @@ export const Dashboard = () => {
         {/* Join by link modal */}
         {showJoinByLinkForm && (
           <div
-            className="fixed inset-0 flex items-center justify-center z-50"
+            className="fixed inset-0 flex items-center justify-center z-50 cursor-pointer"
             onClick={() => {
               setShowJoinByLinkForm(false);
               setJoinError(null);
@@ -426,13 +426,13 @@ export const Dashboard = () => {
                       setJoinError(null);
                       setInviteLinkInput("");
                     }}
-                    className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
+                    className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50"
+                    className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 cursor-pointer"
                   >
                     Join Group
                   </button>
@@ -455,7 +455,7 @@ export const Dashboard = () => {
                   navigator.clipboard.writeText(inviteLink);
                   alert("Invite link copied to clipboard!");
                 }}
-                className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 text-sm"
+                className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 text-sm cursor-pointer"
               >
                 Copy invite link
               </button>
@@ -623,7 +623,7 @@ export const Dashboard = () => {
                       <button
                         key={key}
                         type="button"
-                        className="py-2 border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                        className="py-2 border border-gray-300 bg-white hover:bg-gray-50 text-sm cursor-pointer"
                         onClick={() =>
                           handleKeypadPress(key === "back" ? "back" : key)
                         }
@@ -634,7 +634,7 @@ export const Dashboard = () => {
                   </div>
                   <button
                     type="button"
-                    className="w-full py-2 border border-gray-300 bg-white hover:bg-gray-50 text-sm"
+                    className="w-full py-2 border border-gray-300 bg-white hover:bg-gray-50 text-sm cursor-pointer"
                     onClick={() => handleKeypadPress("clear")}
                   >
                     Clear
