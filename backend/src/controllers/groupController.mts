@@ -55,7 +55,7 @@ export async function getUserGroups(req: Request, res: Response) {
     const groups = await Group.find({
       "members.userId": userId,
     })
-      .populate("createdBy", "name email")
+      .populate("createdBy", "_id name email")
       .populate("members.userId", "name email");
 
     res.status(200).json(groups);
@@ -72,7 +72,7 @@ export async function getGroupById(req: Request, res: Response) {
     const userId = req.userId;
 
     const group = await Group.findById(groupId)
-      .populate("createdBy", "name email")
+      .populate("createdBy", "_id name email")
       .populate("members.userId", "name email");
 
     if (!group) {
@@ -179,7 +179,7 @@ export async function joinGroup(req: Request, res: Response) {
 
     // Return populated group
     const populatedGroup = await Group.findById(groupId)
-      .populate("createdBy", "name email")
+      .populate("createdBy", "_id name email")
       .populate("members.userId", "name email");
 
     // Emit Socket.IO event to all users in the group
@@ -224,5 +224,45 @@ export async function getGroupBalances(req: Request, res: Response) {
   } catch (error) {
     console.error("Error calculating balances:", error);
     res.status(500).json({ error: "Failed to calculate balances" });
+  }
+}
+
+// Delete group (creator only)
+export async function deleteGroup(req: Request, res: Response) {
+  try {
+    const { groupId } = req.params;
+    const userId = req.userId;
+
+    if (!groupId) {
+      return res.status(400).json({ error: "Group ID is required" });
+    }
+
+    // Find the group
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    // Verify user is the creator
+    if (group.createdBy.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ error: "Only the group creator can delete this group" });
+    }
+
+    // Delete all expenses associated with this group
+    const { Expense } = await import("../models/expenseSchema.mjs");
+    await Expense.deleteMany({ groupId });
+
+    // Delete the group
+    await Group.findByIdAndDelete(groupId);
+
+    // Emit Socket.IO event to notify all users in the group
+    io.to(`group-${groupId}`).emit("group-deleted", { groupId });
+
+    res.status(200).json({ message: "Group deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting group:", error);
+    res.status(500).json({ error: "Failed to delete group" });
   }
 }

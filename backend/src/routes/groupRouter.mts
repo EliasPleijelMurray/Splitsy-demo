@@ -6,6 +6,7 @@ import {
   addMember,
   joinGroup,
   getGroupBalances,
+  deleteGroup,
 } from "../controllers/groupController.mjs";
 
 export const groupRouter = Router();
@@ -27,3 +28,6 @@ groupRouter.post("/:groupId/join", joinGroup);
 
 // Get balances for a group
 groupRouter.get("/:groupId/balances", getGroupBalances);
+
+// Delete group (creator only)
+groupRouter.delete("/:groupId", deleteGroup);

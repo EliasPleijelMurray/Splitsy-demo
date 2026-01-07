@@ -13,7 +13,11 @@ export interface Group {
     role: "admin" | "member";
     joinedAt: string;
   }>;
-  createdBy: string;
+  createdBy: {
+    _id: string;
+    name: string;
+    email: string;
+  };
   createdAt: string;
 }
 
@@ -155,6 +159,20 @@ export const groupService = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || "Failed to join group");
+    }
+
+    return response.json();
+  },
+
+  async deleteGroup(groupId: string): Promise<{ message: string }> {
+    const response = await fetch(`${API_URL}/groups/${groupId}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to delete group");
     }
 
     return response.json();

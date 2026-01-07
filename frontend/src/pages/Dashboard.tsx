@@ -106,9 +106,20 @@ export const Dashboard = () => {
       }
     });
 
+    // Listen for group deletion
+    socket.on("group-deleted", ({ groupId }: { groupId: string }) => {
+      setGroups((prevGroups) => prevGroups.filter((g) => g._id !== groupId));
+      if (selectedGroup && selectedGroup._id === groupId) {
+        setSelectedGroup(null);
+        setExpenses([]);
+        setBalanceResult(null);
+      }
+    });
+
     return () => {
       socket.off("expense-created");
       socket.off("member-joined");
+      socket.off("group-deleted");
     };
   }, [socket, selectedGroup]);
 
@@ -231,6 +242,27 @@ export const Dashboard = () => {
       setJoinError(
         error instanceof Error ? error.message : "Failed to join group"
       );
+    }
+  };
+
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!selectedGroup) return;
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete "${selectedGroup.name}"? This will delete all expenses and cannot be undone.`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      await groupService.deleteGroup(groupId);
+      setGroups(groups.filter((g) => g._id !== groupId));
+      setSelectedGroup(null);
+      setExpenses([]);
+      setBalanceResult(null);
+    } catch (error) {
+      console.error("Failed to delete group:", error);
+      alert(error instanceof Error ? error.message : "Failed to delete group");
     }
   };
 
@@ -449,16 +481,27 @@ export const Dashboard = () => {
               <h2 className="text-2xl font-semibold">
                 {selectedGroup.name.toUpperCase()}
               </h2>
-              <button
-                onClick={() => {
-                  const inviteLink = `${window.location.origin}/join/${selectedGroup._id}`;
-                  navigator.clipboard.writeText(inviteLink);
-                  alert("Invite link copied to clipboard!");
-                }}
-                className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 text-sm cursor-pointer"
-              >
-                Copy invite link
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const inviteLink = `${window.location.origin}/join/${selectedGroup._id}`;
+                    navigator.clipboard.writeText(inviteLink);
+                    alert("Invite link copied to clipboard!");
+                  }}
+                  className="px-4 py-2 border border-gray-800 bg-white hover:bg-gray-50 text-sm cursor-pointer"
+                >
+                  Copy invite link
+                </button>
+                {currentUser &&
+                  selectedGroup.createdBy._id === currentUser.id && (
+                    <button
+                      onClick={() => handleDeleteGroup(selectedGroup._id)}
+                      className="px-4 py-2 border border-red-600 bg-white hover:bg-red-50 text-sm text-red-600 cursor-pointer"
+                    >
+                      Delete group
+                    </button>
+                  )}
+              </div>
             </div>
 
             <div className="flex gap-6">
