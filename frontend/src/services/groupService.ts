@@ -211,4 +211,18 @@ export const expenseService = {
 
     return response.json();
   },
+
+  async deleteExpense(expenseId: string): Promise<{ message: string }> {
+    const response = await fetch(`${API_URL}/expenses/${expenseId}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to delete expense");
+    }
+
+    return response.json();
+  },
 };

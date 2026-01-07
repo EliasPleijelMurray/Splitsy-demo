@@ -153,14 +153,12 @@ export async function deleteExpense(req: Request, res: Response) {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    // Only admin or the person who paid can delete
-    if (member.role !== "admin" && expense.paidBy.toString() !== userId) {
-      return res
-        .status(403)
-        .json({ error: "Only admins or the payer can delete expenses" });
-    }
-
+    // Any group member can delete an expense
     await Expense.findByIdAndDelete(expenseId);
+
+    // Emit Socket.IO event to all users in the group
+    io.to(`group-${expense.groupId}`).emit("expense-deleted", { expenseId });
+
     res.status(200).json({ message: "Expense deleted successfully" });
   } catch (error) {
     console.error("Error deleting expense:", error);
